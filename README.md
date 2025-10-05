@@ -19,7 +19,7 @@ Welcome to **Fashion Aura**, a modern, feature-rich e-commerce storefront design
 
 ---
 
-##**Note**: API Key for the several functions are disabled for safety purpose, you can use your own API key for testing.
+**Note**: API Key for the several functions are disabled for safety purpose, you can use your own API key for testing(google ai studio).
 
 ---
 
