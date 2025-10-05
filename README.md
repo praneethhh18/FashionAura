@@ -19,10 +19,6 @@ Welcome to **Fashion Aura**, a modern, feature-rich e-commerce storefront design
 
 ---
 
-**Note**: API Key for the several functions are disabled for safety purpose, you can use your own API key for testing(google ai studio).
-
----
-
 ## 🛠️ Built With
 
 This project is built with a modern, full-stack JavaScript technology set:
@@ -38,7 +34,6 @@ This project is built with a modern, full-stack JavaScript technology set:
 ---
 
 ## 🚀 Getting Started
-
 Follow these instructions to get a copy of the project up and running on your local machine for development and testing purposes.
 
 ### 1. Prerequisites
@@ -54,9 +49,11 @@ Before running the project, you need to set up your environment variables. Creat
 ```.env
 # This is a placeholder for any future environment variables.
 # You may need to add Firebase or Genkit API keys here for full functionality.
+GEMINI_API_KEY= your gemini api key
 
 ```
 *Note: For the current build, the AI features with Genkit are mocked or configured to work in a developer environment, but a `GEMINI_API_KEY` would be required for production use.*
+*Note: API Key for the several functions are disabled for safety purpose, you can use your own API key for testing(google ai studio).
 
 ### 3. Installation
 
