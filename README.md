@@ -129,4 +129,5 @@ Here is a high-level overview of the project's directory structure:
 ```
 
 ---
+Since this wasn’t a race, I focused on innovation and detail with a perfect vibe to craft Fashion-Aura with care.  
 Thank you for checking out Fashion Aura. Happy coding!
