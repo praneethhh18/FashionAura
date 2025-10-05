@@ -16,7 +16,10 @@ Welcome to **Fashion Aura**, a modern, feature-rich e-commerce storefront design
 - **Complete Checkout Flow**: A multi-step, secure checkout process from address entry to payment simulation.
 - **Backend API & Testing**: Includes a REST API for products and a Jest test suite to ensure reliability.
 - **Firebase Integration**: Utilizes Firestore for data storage (like newsletter subscriptions) and Firebase Authentication.
-  ##**Note**: API Key for the several functions are disabled for safety purpose, you can use your own API key for testing.
+
+---
+
+##**Note**: API Key for the several functions are disabled for safety purpose, you can use your own API key for testing.
 
 ---
 
