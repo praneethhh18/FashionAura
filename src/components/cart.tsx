@@ -98,24 +98,27 @@ export function Cart() {
   const handleCheckout = async () => {
     setIsCheckingOut(true);
     try {
-        const response = await fetch('/api/checkout', {
-            method: 'POST',
-            headers: {
-                'Content-Type': 'application/json',
-            },
-            body: JSON.stringify({
-                items: cart,
-                total: finalTotal,
-            }),
-        });
+    // Create a pending order locally so we can attach address and user info later
+    const orderId = crypto?.randomUUID?.() || (Math.random() + Date.now()).toString(36);
+    const idempotencyKey = crypto?.randomUUID?.() || `idem_${Date.now()}_${Math.floor(Math.random()*1000)}`;
 
-        const result = await response.json();
-        
-        if (response.ok) {
-            router.push('/checkout/address');
-        } else {
-            throw new Error(result.message || 'Failed to initiate checkout.');
-        }
+    const pending = {
+      orderId,
+      idempotencyKey,
+      items: cart,
+      total: finalTotal,
+      discounts: appliedCoupon ? [{ code: appliedCoupon.code, amount: discountAmount }] : [],
+      createdAt: new Date().toISOString(),
+      status: 'pending',
+    };
+
+    // Save pending order to localStorage so the address/payment pages can complete it
+    if (typeof window !== 'undefined') {
+      localStorage.setItem('pendingOrder', JSON.stringify(pending));
+    }
+
+    // Navigate to address collection step
+    router.push('/checkout/address');
 
     } catch (error: any) {
         toast({

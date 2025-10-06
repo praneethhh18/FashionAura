@@ -20,6 +20,7 @@ export default function ConfirmationPage() {
     const [orderId, setOrderId] = useState('');
     const [deliveryDate, setDeliveryDate] = useState('');
     const [lastOrder, setLastOrder] = useState<OrderSummary | null>(null);
+    const [shipping, setShipping] = useState<any | null>(null);
 
     useEffect(() => {
         // Simulate generating order details on client mount
@@ -36,6 +37,14 @@ export default function ConfirmationPage() {
             if (savedOrder) {
                 setLastOrder(JSON.parse(savedOrder));
                 localStorage.removeItem('last-order'); // Clean up after use
+            }
+            const savedShipping = localStorage.getItem('shippingAddress');
+            if (savedShipping) {
+                try {
+                    setShipping(JSON.parse(savedShipping));
+                } catch (e) {
+                    // ignore parse errors
+                }
             }
         }
     }, []);
@@ -90,7 +99,13 @@ export default function ConfirmationPage() {
                             </div>
                              <div>
                                 <p className="text-muted-foreground text-sm">Shipping to:</p>
-                                <p className="font-semibold">John Doe, 123 Fashion Ave, New York</p>
+                                {shipping ? (
+                                    <p className="font-semibold">
+                                        {shipping.fullName}, {shipping.street}{shipping.locality ? `, ${shipping.locality}` : ''}{shipping.landmark ? `, ${shipping.landmark}` : ''}, {shipping.city}{shipping.state ? `, ${shipping.state}` : ''}{shipping.pincode ? ` - ${shipping.pincode}` : ''}
+                                    </p>
+                                ) : (
+                                    <p className="font-semibold text-muted-foreground">No shipping address available</p>
+                                )}
                             </div>
                         </div>
                     </div>

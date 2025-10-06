@@ -82,11 +82,13 @@ export function ProductCard({ product, variant = 'default' }: ProductCardProps) 
   const handleAddToCart = (e: React.MouseEvent) => {
     e.preventDefault();
     e.stopPropagation();
-    addToCart(product);
+    // Show feedback immediately, defer the actual cart mutation so the toast appears without delay
     toast({
       title: 'Added to cart',
       description: `${product.name} has been added to your cart.`,
     });
+    // Defer heavy work (localStorage serialization) to next tick so UI updates aren't blocked
+    setTimeout(() => addToCart(product), 0);
   };
 
   const handleWishlistToggle = (e: React.MouseEvent) => {

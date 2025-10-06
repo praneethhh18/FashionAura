@@ -90,6 +90,13 @@ const customerSupportFlow = ai.defineFlow(
   },
   async input => {
     try {
+      // Guard: if Genkit/google AI API key is not set, avoid calling the remote service
+      const hasApiKey = !!(process.env.GEMINI_API_KEY || process.env.GOOGLE_API_KEY);
+      if (!hasApiKey) {
+        console.warn('Genkit AI API key not provided; skipping remote prompt.');
+        return { error: 'AI service not configured. Please set GEMINI_API_KEY or GOOGLE_API_KEY to enable AI features.' };
+      }
+
       const {output} = await prompt(input);
       return output!;
     } catch (error) {

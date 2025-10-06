@@ -89,11 +89,31 @@ export const CartProvider = ({ children }: { children: ReactNode }) => {
 
   useEffect(() => {
     if (!isClient) return;
+    // Persist a minimal cart representation and debounce writes to avoid blocking the main thread
+    let timer: ReturnType<typeof setTimeout> | null = null;
     try {
-      window.localStorage.setItem('shopstream-cart', JSON.stringify(cart));
+      const minimal = cart.map(item => ({
+        id: item.id,
+        name: item.name,
+        price: item.price,
+        quantity: item.quantity,
+        imageUrl: item.imageUrl,
+        category: item.category || null,
+      }));
+      // debounce write (150ms) to batch rapid updates
+      timer = setTimeout(() => {
+        try {
+          window.localStorage.setItem('shopstream-cart', JSON.stringify(minimal));
+        } catch (err) {
+          console.error('Failed to write cart to localStorage', err);
+        }
+      }, 150);
     } catch (error) {
-      console.error('Failed to save cart to localStorage', error);
+      console.error('Failed to prepare cart for storage', error);
     }
+    return () => {
+      if (timer) clearTimeout(timer);
+    };
   }, [cart]);
 
    useEffect(() => {

@@ -1,12 +1,11 @@
 
-'use client';
+ 'use client';
 
 import { Header } from '@/components/header';
-import { casualWearMen } from '@/lib/products';
 import { ProductGrid } from '@/components/product-grid';
 import { NewsletterForm } from '@/components/newsletter-form';
 import { Separator } from '@/components/ui/separator';
-import { useState, useMemo } from 'react';
+import { useState, useMemo, useEffect } from 'react';
 import Link from 'next/link';
 import Image from 'next/image';
 import { Checkbox } from '@/components/ui/checkbox';
@@ -18,6 +17,26 @@ const categories = [
 
 export default function MenCasualPage() {
   const [selectedCategories, setSelectedCategories] = useState<string[]>([]);
+  const [allProducts, setAllProducts] = useState<any[]>([]);
+  const [isLoading, setIsLoading] = useState(true);
+
+  useEffect(() => {
+    let mounted = true;
+    const fetchProducts = async () => {
+      try {
+        const res = await fetch('/api/products');
+        const data = await res.json();
+        if (mounted) setAllProducts(data);
+      } catch (err) {
+        console.error('Failed to fetch products', err);
+        if (mounted) setAllProducts([]);
+      } finally {
+        if (mounted) setIsLoading(false);
+      }
+    };
+    fetchProducts();
+    return () => { mounted = false; };
+  }, []);
 
   const handleCategoryChange = (categoryName: string) => {
     setSelectedCategories(prev =>
@@ -28,13 +47,10 @@ export default function MenCasualPage() {
   };
 
   const filteredProducts = useMemo(() => {
-    if (selectedCategories.length === 0) {
-      return casualWearMen;
-    }
-    return casualWearMen.filter(product =>
-      product.category && selectedCategories.includes(product.category)
-    );
-  }, [selectedCategories]);
+    const casual = allProducts.filter(p => p.id && p.id.toString().includes('men_casual'));
+    if (selectedCategories.length === 0) return casual;
+    return casual.filter(product => product.category && selectedCategories.includes(product.category));
+  }, [selectedCategories, allProducts]);
 
   return (
     <div className="flex flex-col bg-background min-h-screen">

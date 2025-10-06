@@ -4,7 +4,7 @@
 import { Header } from '@/components/header';
 import Link from 'next/link';
 import Image from 'next/image';
-import { streetStyleWomen } from '@/lib/products';
+import { useProducts } from '@/hooks/use-products';
 import { ProductGrid } from '@/components/product-grid';
 import { NewsletterForm } from '@/components/newsletter-form';
 import { Separator } from '@/components/ui/separator';
@@ -17,7 +17,12 @@ const categories = ["Oversized Tees", "Cargo Pants", "Sneakers", "Accessories"];
 export default function WomenStreetStylePage() {
   const [selectedCategories, setSelectedCategories] = useState<string[]>([]);
 
-  const allProducts = useMemo(() => streetStyleWomen, []);
+  // Fetch products from the backend and derive the street-style women set
+  const { products: productsFromApi = [] } = useProducts();
+
+  const allProducts = useMemo(() => {
+    return productsFromApi.filter(p => p.id && String(p.id).includes('women_street'));
+  }, [productsFromApi]);
 
   const filteredProducts = useMemo(() => {
     if (selectedCategories.length === 0) {
@@ -64,22 +69,22 @@ export default function WomenStreetStylePage() {
             <div className="max-w-7xl mx-auto">
                 <h2 className="text-3xl font-display font-black uppercase tracking-wide text-foreground text-center mb-8">Shop by Category</h2>
                 <div className="flex flex-wrap justify-center gap-x-6 gap-y-4">
-                    {categories.map((category) => (
-                        <div key={category} className="flex items-center space-x-2">
-                           <Checkbox
-                                id={category}
-                                checked={selectedCategories.includes(category)}
-                                onCheckedChange={() => setSelectedCategories(prev =>
-                                  prev.includes(category)
-                                    ? prev.filter(c => c !== category)
-                                    : [...prev, category]
-                                )}
-                            />
-                            <Label htmlFor={category} className="text-lg font-medium cursor-pointer">
-                                {category}
-                            </Label>
-                        </div>
-                    ))}
+          {categories.map((category) => (
+            <div key={category} className="flex items-center space-x-2">
+               <Checkbox
+                id={category}
+                checked={selectedCategories.includes(category)}
+                onCheckedChange={() => setSelectedCategories(prev =>
+                  prev.includes(category)
+                  ? prev.filter(c => c !== category)
+                  : [...prev, category]
+                )}
+              />
+              <Label htmlFor={category} className="text-lg font-medium cursor-pointer">
+                {category}
+              </Label>
+            </div>
+          ))}
                 </div>
             </div>
         </section>

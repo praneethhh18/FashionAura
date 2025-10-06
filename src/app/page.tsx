@@ -4,7 +4,7 @@
 import Image from 'next/image';
 import Link from 'next/link';
 import { motion } from 'framer-motion';
-import { products } from '@/lib/products';
+import React, { useState, useEffect } from 'react';
 import { Header } from '@/components/header';
 import { Button } from '@/components/ui/button';
 import { ProductCard } from '@/components/product-card';
@@ -18,7 +18,6 @@ import {
 } from '@/components/ui/carousel';
 import { FloatingSupportButton } from '@/components/floating-support-button';
 import Autoplay from "embla-carousel-autoplay"
-import React, { useState, useEffect } from 'react';
 import { NewsletterForm } from '@/components/newsletter-form';
 
 const heroItems = [
@@ -127,6 +126,28 @@ const trendingItems = [
 
 export default function Home() {
   const heroAutoplayPlugin = React.useRef(Autoplay({ delay: 5000, stopOnInteraction: true }));
+  const [products, setProducts] = useState<any[]>([]);
+  const [isLoadingProducts, setIsLoadingProducts] = useState(true);
+
+  useEffect(() => {
+    let mounted = true;
+    const fetchProducts = async () => {
+      try {
+        const res = await fetch('/api/products');
+        if (!res.ok) return setProducts([]);
+        const data = await res.json();
+        if (mounted) setProducts(data);
+      } catch (err) {
+        console.error('Failed to fetch products', err);
+        if (mounted) setProducts([]);
+      } finally {
+        if (mounted) setIsLoadingProducts(false);
+      }
+    };
+    fetchProducts();
+    return () => { mounted = false; };
+  }, []);
+
   const bestSellers = products.slice(0, 5);
   const trendingProducts = products.slice(5, 10);
   const activityCarouselPlugin = React.useRef(Autoplay({ delay: 5000, stopOnInteraction: true }));

@@ -1,0 +1,150 @@
+Fashion-Aura (root)
+
+apphosting.yaml
+components.json
+firestore.rules
+jest.config.ts
+jest.setup.js
+next.config.ts
+package.json
+postcss.config.mjs
+README.md
+tailwind.config.ts
+tsconfig.json
+.env.local (optional / local only)
+
+docs/
+  backend.json
+  blueprint.md
+
+public/
+  assmenu.jpg
+  assmenu1.jpg
+  casual-wear.png
+  he1.jpg
+  her1.jpg
+  home1.png
+  mens collection.png
+  pareve.png
+  product.jpg
+  wolcol.png
+  Womens Collection.png
+  workform.png
+  icons/
+    gpay.svg
+    paytm.svg
+    phonepe.svg
+  logos/
+    newlogo.jpeg
+    newlogo.JPG
+
+pages/
+  (image folders and static pages...)
+
+products/
+  (images and product folders...)
+
+scripts/
+  create-indexes.ts
+
+src/
+  ai/
+    dev.ts
+    genkit scripts
+  dev.ts
+  genkit.ts
+  flows/
+    ...
+  app/
+    favicon.ico
+    globals.css
+    layout.tsx
+    page.tsx
+    about/
+    api/
+      products/
+        route.ts            <-- GET /api/products (returns hardcoded products list)
+      checkout/
+        route.ts            <-- POST /api/checkout (validates and persists/logs order)
+      users/
+        route.ts            <-- POST /api/users
+    checkout/
+      layout.tsx
+      address/
+        page.tsx            <-- address form; saves `shippingAddress` to localStorage
+      payment/
+        page.tsx            <-- payment UI; submits `pendingOrder` to /api/checkout
+      confirmation/
+        page.tsx            <-- reads `shippingAddress` and `last-order` to show confirmation
+    products/
+      [id]/                <-- dynamic product pages and client components
+    (other pages...)
+
+  components/
+    account-sheet.tsx
+    ai-advisor.tsx
+    auth-sheet.tsx
+    birthday-discount-dialog.tsx
+    cart-item-controls.tsx
+    cart.tsx
+    coupon-card.tsx
+    FirebaseErrorListener.tsx
+    floating-support-button.tsx
+    header.tsx
+    logo.tsx
+    newsletter-form.tsx
+    product-card.tsx       <-- shows product & Add to Cart button
+    product-filters.tsx
+    product-grid.tsx
+    support-chat.tsx
+    ui/
+      (ui helper components)
+
+  context/
+    cart-context.tsx      <-- Cart provider (localStorage persistence, add/update/remove/clear)
+    wishlist-context.tsx
+
+  firebase/
+    admin.ts
+    client-provider.tsx
+    config.ts
+    error-emitter.ts
+    errors.ts
+    index.ts
+    non-blocking-login.tsx
+    non-blocking-updates.tsx
+    provider.tsx
+    firestore/
+      ...
+
+  hooks/
+    use-cart.ts           <-- hook wrapper around CartContext
+    use-mobile.tsx
+    use-toast.ts
+    use-wishlist.ts
+
+  lib/
+    coupons.ts
+    placeholder-images.json
+    placeholder-images.ts
+    products.ts           <-- higher-level product helpers
+    utils.ts
+    mongodb.ts            <-- MongoDB helper (getDb/getClient/closeClient)
+
+  types/
+    index.ts              <-- Product, CartItem, etc. types
+
+test/
+  __mocks__/
+    next-server.js        <-- NextResponse shim used by Jest tests
+
+Notes:
+- LocalStorage keys used by the app:
+  - `shopstream-cart` : minimal cart persisted for quick UI load
+  - `shopstream-coupon` : applied coupon
+  - `pendingOrder` : created at checkout (orderId + idempotencyKey + items + total) and submitted on payment
+  - `shippingAddress` : saved from address form and used on confirmation page
+
+- Tests: Jest + ts-jest, in-memory MongoDB used for API tests that verify checkout/users persistence
+
+This file lists the main folders and important files for quick reference. If you want the tree expanded (every file listed) or exported as `tree` format for Windows, I can generate that next.

@@ -1,3 +1,7 @@
+// The `firebase-admin` package is optional in some environments (CI). If not installed,
+// typechecking can fail. We ignore the TS error here; in production you should
+// install `firebase-admin` and its types.
+// @ts-ignore: Optional dependency for server environments
 import * as admin from 'firebase-admin';
 
 const hasBeenInitialized = admin.apps.length > 0;

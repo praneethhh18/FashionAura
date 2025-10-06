@@ -43,19 +43,20 @@ export function ProductDetailsClient({ product }: { product: Product }) {
   const isInWishlist = wishlist.some((item) => item.id === product.id);
 
   const handleAddToCart = () => {
-    addToCart(product);
+    // Show toast immediately, then perform cart update on next tick so toast appears fast
     toast({
       title: 'Added to cart',
       description: `${product.name} has been added to your cart.`,
     });
+    setTimeout(() => addToCart(product), 0);
   };
 
   const handleBuyNow = () => {
-    addToCart(product);
     toast({
       title: 'Proceeding to checkout',
       description: 'You would be redirected to the checkout page.',
     });
+    setTimeout(() => addToCart(product), 0);
   };
 
   const handleWishlistToggle = () => {

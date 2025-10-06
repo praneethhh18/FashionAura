@@ -74,7 +74,9 @@ function getRelatedProducts(product: Product): Product[] {
 
 
 export default async function ProductDetailPage({ params }: { params: { id: string } }) {
-  const product = getProduct(params.id);
+  // Next.js (v15+) may provide `params` as an async object. Await it before using properties.
+  const { id } = await params as { id: string };
+  const product = getProduct(id);
 
   if (!product) {
     notFound();

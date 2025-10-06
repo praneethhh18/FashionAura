@@ -129,5 +129,69 @@ Here is a high-level overview of the project's directory structure:
 ```
 
 ---
+
+## 🗄️ Database connection setup
+
+Follow these steps to connect the app to a MongoDB instance (Atlas) for local testing. Do NOT commit secrets — keep them in a local `.env.local` file.
+
+1. Create an Atlas cluster
+	- Go to <https://cloud.mongodb.com> and create a free cluster.
+2. Create a DB user
+	- Project → Database Access → Add new Database User. Give the user `readWrite` access to the app database.
+3. Allow network access
+	- Project → Network Access → Add your machine IP (or `0.0.0.0/0` for quick testing only).
+4. Copy the connection string
+	- Clusters → Connect → "Connect your application" → copy the `mongodb+srv://...` URI.
+
+Local configuration (do not commit)
+
+Create `.env.local` in the project root and add your credentials locally (example):
+
+```text
+MONGODB_URI="mongodb+srv://<DB_USER>:<DB_PASSWORD>@cluster0.xxxxx.mongodb.net/?retryWrites=true&w=majority"
+MONGODB_DB="fashion-aura"
+```
+
+PowerShell one-liner (replace placeholders and run locally):
+
+```powershell
+@"
+MONGODB_URI="mongodb+srv://<DB_USER>:<DB_PASSWORD>@cluster0.xxxxx.mongodb.net/?retryWrites=true&w=majority"
+MONGODB_DB="fashion-aura"
+"@ | Out-File -FilePath .env.local -Encoding utf8
+```
+
+Run the app locally
+
+```bash
+npm install
+npm run dev -- --port 9002
+```
+
+Verify DB writes (example: checkout route)
+
+Use PowerShell (run in a separate shell while the dev server is running):
+
+```powershell
+$body = @{ items = @(@{ id='prod-1'; name='Test'; quantity=1; price=100 }); total = 100 } | ConvertTo-Json -Depth 5
+Invoke-RestMethod -Uri 'http://localhost:9002/api/checkout' -Method Post -Body $body -ContentType 'application/json'
+```
+
+Create DB indexes (run once)
+
+We provide a script `scripts/create-indexes.ts` that creates common indexes used by the app. After setting `.env.local`, run:
+
+```bash
+# using ts-node if available
+npx ts-node scripts/create-indexes.ts
+# or compile the script to JS and run with node
+```
+
+Security notes
+
+- Never commit `.env.local` or any secret keys. This project already ignores `.env*` in `.gitignore`.
+- If a secret is accidentally exposed, rotate it immediately in Atlas (Database Access → Edit user → Change password).
+- For CI / hosting use the provider's secret manager (Vercel / Netlify / GitHub Actions secrets). Do not store secrets in the repository.
+
 Since this wasn’t a race, I focused on innovation and detail with a perfect vibe to craft Fashion-Aura with care.  
 Thank you for checking out Fashion Aura. Happy coding!

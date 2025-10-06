@@ -4,7 +4,7 @@
 import { Header } from '@/components/header';
 import { Button } from '@/components/ui/button';
 import { ProductCard } from '@/components/product-card';
-import { ivoryMen } from '@/lib/products';
+import { useProducts } from '@/hooks/use-products';
 import { Filter, X } from 'lucide-react';
 import {
   DropdownMenu,
@@ -36,8 +36,10 @@ export default function IvoryMenCollectionPage() {
     
     const [isFiltersSheetOpen, setIsFiltersSheetOpen] = useState(false);
 
+    const { products: allProducts } = useProducts();
+
     const filteredAndSortedProducts = useMemo(() => {
-        let products: Product[] = [...ivoryMen];
+        let products: Product[] = allProducts.filter(p => p.id && String(p.id).includes('ivory'));
 
         // Filtering
         if (filters.colors.length > 0) {
@@ -139,7 +141,9 @@ export default function IvoryMenCollectionPage() {
                                 {Object.entries(filters).flatMap(([key, value]) => {
                                     if (Array.isArray(value) && value.length > 0) {
                                         if (key === 'priceRange') {
-                                            if (value[0] > 0 || value[1] < 8000) {
+                                            const min = Number(value[0]);
+                                            const max = Number(value[1]);
+                                            if ((Number.isFinite(min) && min > 0) || (Number.isFinite(max) && max < 8000)) {
                                                 return <span key="price" className="text-xs bg-muted text-muted-foreground px-2 py-1 rounded-md">Price</span>
                                             }
                                             return [];

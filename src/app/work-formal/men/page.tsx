@@ -4,7 +4,7 @@
 import { Header } from '@/components/header';
 import Link from 'next/link';
 import Image from 'next/image';
-import { workFormalMen } from '@/lib/products';
+import { useProducts } from '@/hooks/use-products';
 import { ProductGrid } from '@/components/product-grid';
 import { NewsletterForm } from '@/components/newsletter-form';
 import { Separator } from '@/components/ui/separator';
@@ -27,14 +27,12 @@ export default function MenWorkFormalPage() {
     );
   };
 
+  const { products: allProducts } = useProducts();
   const filteredProducts = useMemo(() => {
-    if (selectedCategories.length === 0) {
-      return workFormalMen;
-    }
-    return workFormalMen.filter(product =>
-      product.category && selectedCategories.includes(product.category)
-    );
-  }, [selectedCategories]);
+    const list = allProducts.filter(p => p.id && String(p.id).includes('workFormal'));
+    if (selectedCategories.length === 0) return list;
+    return list.filter(product => product.category && selectedCategories.includes(product.category));
+  }, [selectedCategories, allProducts]);
 
 
   return (

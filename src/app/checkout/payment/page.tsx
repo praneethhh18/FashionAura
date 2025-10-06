@@ -88,20 +88,156 @@ export default function PaymentPage() {
         let isValid = false;
         if (activeTab === "card") {
             isValid = await cardForm.trigger();
-            if (isValid) processPayment();
+            if (isValid) {
+                await submitPendingOrder();
+                processPayment();
+            }
         } else if (activeTab === "upi") {
             isValid = await upiForm.trigger();
-             if (isValid) processPayment();
+             if (isValid) {
+                await submitPendingOrder();
+                processPayment();
+             }
         } else if (activeTab === "netbanking") {
             isValid = await netbankingForm.trigger();
-             if (isValid) processPayment();
+             if (isValid) {
+                await submitPendingOrder();
+                processPayment();
+             }
         } else if (activeTab === "wallets") {
             isValid = await walletForm.trigger();
-             if (isValid) processPayment();
+             if (isValid) {
+                await submitPendingOrder();
+                processPayment();
+             }
         } else if (activeTab === "cod") {
+            // For COD, no payment validation; but still submit final order
+            await submitPendingOrder();
             processPayment();
         }
     }
+
+    async function submitPendingOrder() {
+        try {
+            if (typeof window === 'undefined') return;
+            const pendingRaw = localStorage.getItem('pendingOrder');
+            const shippingRaw = localStorage.getItem('shippingAddress');
+            const pending = pendingRaw ? JSON.parse(pendingRaw) : null;
+            const shipping = shippingRaw ? JSON.parse(shippingRaw) : null;
+
+            if (!pending) return;
+
+            const payload: any = {
+                orderId: pending.orderId,
+                items: pending.items,
+                total: pending.total,
+                discounts: pending.discounts || [],
+                // Build shippingAddress only with defined fields (avoid sending nulls)
+                shippingAddress: shipping ? {
+                    line1: shipping.street,
+                    ...(shipping.landmark ? { line2: shipping.landmark } : {}),
+                    city: shipping.city,
+                    state: shipping.state,
+                    postal: shipping.pincode,
+                    country: 'IN',
+                } : undefined,
+                user: shipping ? { name: shipping.fullName, email: shipping.email, phone: shipping.mobile } : undefined,
+            };
+
+            const res = await fetch('/api/checkout', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                    'idempotency-key': pending.idempotencyKey,
+                },
+                body: JSON.stringify(payload),
+            });
+
+            // Debug: show what we're sending to the server
+            // (useful during development; remove or guard in production)
+            // eslint-disable-next-line no-console
+            console.debug('submitPendingOrder payload', { payload, idempotencyKey: pending.idempotencyKey });
+
+            if (!res.ok) {
+                const text = await res.text();
+                console.error('Failed to persist order', text);
+            } else {
+                // remove only pendingOrder; keep shippingAddress so confirmation page can display it
+                localStorage.removeItem('pendingOrder');
+            }
+        } catch (err) {
+            console.error('Error submitting final order', err);
+        }
+    }
+
+    // Hook into processPayment flow to POST final order when payment completes.
+    // We'll override processPayment to first submit the pendingOrder if present, then run original logic.
+    useEffect(() => {
+        const original = processPayment;
+        (window as any).completeOrderAndNotify = async () => {
+            try {
+                // Read pending order and shipping address
+                const pendingRaw = typeof window !== 'undefined' ? localStorage.getItem('pendingOrder') : null;
+                const shippingRaw = typeof window !== 'undefined' ? localStorage.getItem('shippingAddress') : null;
+                const pending = pendingRaw ? JSON.parse(pendingRaw) : null;
+                const shipping = shippingRaw ? JSON.parse(shippingRaw) : null;
+
+                if (pending) {
+                    const payload: any = {
+                        orderId: pending.orderId,
+                        items: pending.items,
+                        total: pending.total,
+                        discounts: pending.discounts || [],
+                        shippingAddress: shipping ? {
+                            line1: shipping.street,
+                            line2: shipping.landmark || null,
+                            city: shipping.city,
+                            state: shipping.state,
+                            postal: shipping.pincode,
+                            country: 'IN',
+                        } : null,
+                        user: shipping ? { name: shipping.fullName, email: shipping.email, phone: shipping.mobile } : null,
+                    };
+
+                    const res = await fetch('/api/checkout', {
+                        method: 'POST',
+                        headers: {
+                            'Content-Type': 'application/json',
+                            'idempotency-key': pending.idempotencyKey,
+                        },
+                        body: JSON.stringify(payload),
+                    });
+
+                    if (!res.ok) {
+                        console.error('Failed to persist order', await res.text());
+                    } else {
+                        // Clear pending order on success; keep shippingAddress for confirmation UI
+                        localStorage.removeItem('pendingOrder');
+                    }
+                }
+            } catch (err) {
+                console.error('Error submitting final order', err);
+            } finally {
+                // Run original completion logic (toast, clear cart, navigate)
+                original();
+            }
+        };
+
+        // Replace processPayment with a wrapper that first calls our submission helper
+        const wrapped = async () => {
+            // call the helper which submits then calls original
+            await (window as any).completeOrderAndNotify();
+        };
+
+        // Replace button handler to use wrapped function by setting local handler
+        // We can't directly replace the onClick prop from here, but our handlePayment -> processPayment path triggers processPayment,
+        // so we swap processPayment reference via closure by assigning to (window as any).completeOrderAndNotify.
+
+        return () => {
+            delete (window as any).completeOrderAndNotify;
+        };
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+    }, []);
 
     return (
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-12">

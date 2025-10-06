@@ -36,35 +36,13 @@ import { ArrowRight } from 'lucide-react';
 import { CouponCard } from './coupon-card';
 import { coupons } from '@/lib/coupons';
 import { useRouter } from 'next/navigation';
-import {
-    products as allProducts,
-    casualWearMen,
-    casualWearWomen,
-    workFormalMen,
-    workFormalWomen,
-    partyEveningMen,
-    partyEveningWomen,
-    ethnicWearMen,
-    ethnicWearWomen,
-    sportsActivewearMen,
-    sportsActivewearWomen,
-    accessoriesMen,
-    accessoriesWomen,
-    jewelry,
-    urbanEdgeSneakers,
-    ivoryMen,
-    femmeEdge
-} from '@/lib/products';
+import { useProducts } from '@/hooks/use-products';
 import type { Product } from '@/types';
 import { formatPrice } from '@/lib/utils';
 
-const allProductCollections = [
-    ...allProducts, ...casualWearMen, ...casualWearWomen, ...workFormalMen, ...workFormalWomen,
-    ...partyEveningMen, ...partyEveningWomen, ...ethnicWearMen, ...ethnicWearWomen,
-    ...sportsActivewearMen, ...sportsActivewearWomen, ...accessoriesMen, ...accessoriesWomen,
-    ...jewelry, ...urbanEdgeSneakers, ...ivoryMen, ...femmeEdge
-];
-const uniqueProducts = Array.from(new Map(allProductCollections.map(p => [p.id, p])).values());
+// We'll derive product lists from the /api/products endpoint using the useProducts hook
+// to keep frontend <-> backend separation clear. Pages/components that need categorised
+// lists can filter the unified products array.
 
 
 const megaMenuItems = {
@@ -248,6 +226,8 @@ export function Header() {
   const [suggestions, setSuggestions] = useState<Product[]>([]);
   const [isSuggestionsVisible, setIsSuggestionsVisible] = useState(false);
   const router = useRouter();
+  // Products fetched from backend for search/autocomplete
+  const { products: uniqueProducts = [] } = useProducts();
   
   const lastScrollY = useRef(0);
   const headerRef = useRef<HTMLElement>(null);
@@ -294,7 +274,7 @@ export function Header() {
     setSearchQuery(query);
 
     if (query.trim().length > 0) {
-      const filtered = uniqueProducts.filter(product => 
+      const filtered = uniqueProducts.filter((product: Product) => 
         product.name.toLowerCase().includes(query.toLowerCase()) ||
         product.category?.toLowerCase().includes(query.toLowerCase())
       ).slice(0, 5); // Limit suggestions
