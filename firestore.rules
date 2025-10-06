@@ -1,0 +1,106 @@
+/**
+ * @fileoverview Firestore Security Rules for the application.
+ *
+ * Core Philosophy:
+ * This ruleset enforces a strict user-ownership model. Each user can only
+ * read and write their own profile data and their own orders.
+ *
+ * Data Structure:
+ * - /users/{userId}: Stores public profile information for each user.
+ * - /users/{userId}/orders/{orderId}: Stores orders placed by a specific user.
+ *
+ * Key Security Decisions:
+ * - Users can only access their own data. There is no support for admin roles or shared access.
+ * - User listing is not allowed to prevent enumeration.
+ *
+ * Denormalization for Authorization:
+ * The rules rely on the `userId` parameter in the path to enforce ownership.
+ * No denormalization is needed in the data itself because the path inherently
+ * links the data to the user.
+ *
+ * Structural Segregation:
+ * The application uses a hierarchical structure to segregate user data.
+ * Each user has their own top-level document, and their orders are stored
+ * in a subcollection under their user document.
+ */
+rules_version = '2';
+service cloud.firestore {
+  match /databases/{database}/documents {
+
+    /**
+     * @description Controls access to user profile information.
+     * @path /users/{userId}
+     * @allow (create) User with ID 'user_abc' can create their own profile.
+     *   - auth.uid: 'user_abc'
+     *   - resource.data: { email: 'test@example.com', displayName: 'Test User' }
+     * @allow (get) User with ID 'user_abc' can read their profile.
+     *   - auth.uid: 'user_abc'
+     * @allow (update) User with ID 'user_abc' can update their profile.
+     *   - auth.uid: 'user_abc'
+     * @allow (delete) User with ID 'user_abc' can delete their profile.
+     *   - auth.uid: 'user_abc'
+     * @deny (create) User with ID 'user_xyz' cannot create a profile for 'user_abc'.
+     *   - auth.uid: 'user_xyz'
+     *   - resource.data: { id: 'user_abc', email: 'test@example.com' }
+     * @deny (get) User with ID 'user_xyz' cannot read profile 'user_abc'.
+     *   - auth.uid: 'user_xyz'
+     * @principle Enforces document ownership for reads and writes.
+     */
+    match /users/{userId} {
+      // Helper function to check if the user is signed in and owns the document.
+      function isSignedIn() {
+        return request.auth != null;
+      }
+      function isOwner(userId) {
+        return isSignedIn() && request.auth.uid == userId;
+      }
+      function isExistingOwner(userId) {
+          return isOwner(userId) && resource != null;
+      }
+
+      allow get: if isOwner(userId);
+      allow list: if false; // Prevent listing of all users.
+
+      allow create: if isOwner(userId) && request.resource.data.email is string; // Only the user can create their own profile.
+      allow update: if isExistingOwner(userId); // Only the owner can update.
+      allow delete: if isExistingOwner(userId); // Only the owner can delete.
+    }
+
+    /**
+     * @description Controls access to orders placed by a user.
+     * @path /users/{userId}/orders/{orderId}
+     * @allow (create) User with ID 'user_abc' can create an order.
+     *   - auth.uid: 'user_abc'
+     *   - resource.data: { items: [...], total: 100, createdAt: '...' }
+     * @allow (get) User with ID 'user_abc' can read their order.
+     *   - auth.uid: 'user_abc'
+     * @allow (update) User with ID 'user_abc' can update their order.
+     *   - auth.uid: 'user_abc'
+     * @allow (delete) User with ID 'user_abc' can delete their order.
+     *   - auth.uid: 'user_abc'
+     * @deny (create) User with ID 'user_xyz' cannot create an order for 'user_abc'.
+     *   - auth.uid: 'user_xyz'
+     *   - resource.data: { items: [...], total: 100, createdAt: '...' }
+     * @deny (get) User with ID 'user_xyz' cannot read order 'order_123' of user 'user_abc'.
+     *   - auth.uid: 'user_xyz'
+     * @principle Enforces document ownership for reads and writes within a user's subcollection.
+     */
+    match /users/{userId}/orders/{orderId} {
+      // Helper function to check if the user is signed in and owns the document.
+      function isSignedIn() {
+        return request.auth != null;
+      }
+      function isOwner(userId) {
+        return isSignedIn() && request.auth.uid == userId;
+      }
+      function isExistingOwner(userId) {
+          return isOwner(userId) && resource != null;
+      }
+      allow get: if isOwner(userId);
+      allow list: if isOwner(userId); // Only the owner can list their own orders.
+      allow create: if isOwner(userId); // Only the owner can create.
+      allow update: if isExistingOwner(userId); // Only the owner can update.
+      allow delete: if isExistingOwner(userId); // Only the owner can delete.
+    }
+  }
+}
