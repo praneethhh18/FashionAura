@@ -8,31 +8,47 @@ if (!uri) {
   console.warn('MONGODB_URI not set; database calls will be no-ops.');
 }
 
-let cachedClient: MongoClient | null = null;
-let cachedDb: Db | null = null;
+declare global {
+  // eslint-disable-next-line no-var
+  var __mongo_global__: { client?: MongoClient; db?: Db } | undefined;
+}
+
+async function createClient() {
+  // Tune pool size for serverless: lower if you hit connection limits
+  const client = new MongoClient(uri!, {
+    maxPoolSize: 10,
+    serverSelectionTimeoutMS: 5000,
+  });
+  await client.connect();
+  return client;
+}
 
 export async function getClient(): Promise<MongoClient | null> {
   if (!uri) return null;
-  if (cachedClient) return cachedClient;
-  const client = new MongoClient(uri);
-  await client.connect();
-  cachedClient = client;
+  if (!global.__mongo_global__) global.__mongo_global__ = {};
+  if (global.__mongo_global__.client) return global.__mongo_global__.client;
+  const client = await createClient();
+  global.__mongo_global__.client = client;
   return client;
 }
 
 export async function getDb(): Promise<Db | null> {
   if (!uri) return null;
-  if (cachedDb) return cachedDb;
+  if (!global.__mongo_global__) global.__mongo_global__ = {};
+  if (global.__mongo_global__.db) return global.__mongo_global__.db;
   const client = await getClient();
   if (!client) return null;
-  cachedDb = client.db(dbName);
-  return cachedDb;
+  global.__mongo_global__.db = client.db(dbName);
+  return global.__mongo_global__.db;
 }
 
 export async function closeClient() {
-  if (cachedClient) {
-    await cachedClient.close();
-    cachedClient = null;
-    cachedDb = null;
+  if (global.__mongo_global__ && global.__mongo_global__.client) {
+    try {
+      await global.__mongo_global__.client.close();
+    } catch (e) {
+      // ignore
+    }
+    global.__mongo_global__ = undefined;
   }
 }
