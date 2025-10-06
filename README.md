@@ -1,4 +1,9 @@
+## 🌐 **Live Demo:** [Fashion Aura](https://fashion-aura-joo6e3ok1-praneethhh0218-7818s-projects.vercel.app/)  
+Explore the fully responsive web version. https://fashion-aura-joo6e3ok1-praneethhh0218-7818s-projects.vercel.app
 
+
+
+---
 # 🛍️ Fashion Aura
 
 Welcome to **Fashion Aura**, a modern, feature-rich e-commerce storefront designed to provide a seamless and intelligent shopping experience. This project showcases a blend of cutting-edge web technologies, including a robust frontend with Next.js, powerful backend services with Firebase, and generative AI features powered by Genkit.
