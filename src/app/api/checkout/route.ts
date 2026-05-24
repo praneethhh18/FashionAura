@@ -3,6 +3,7 @@ import { NextResponse } from 'next/server';
 import { z } from 'zod';
 import { getDb } from '@/lib/mongodb';
 import { randomUUID } from 'crypto';
+import { note, reportIncident } from '@/lib/incidentiq-reporter';
 
 const checkoutSchema = z.object({
   items: z.array(
@@ -91,6 +92,19 @@ export async function POST(request: Request) {
     return NextResponse.json({ message: 'Checkout successful!', orderId });
   } catch (error: any) {
     console.error('Checkout failed:', error);
+
+    // Ship to IncidentIQ for AI root-cause analysis (best-effort, non-blocking).
+    note('ERROR', 'fashion-aura-api',
+      `POST /api/checkout failed: ${error?.name ?? 'Error'}: ${error?.message ?? String(error)}`);
+    if (error?.stack) {
+      note('ERROR', 'fashion-aura-api', error.stack.split('\n').slice(0, 5).join('\n'));
+    }
+    void reportIncident({
+      title: `Checkout failure - ${(error?.message ?? 'unknown').slice(0, 100)}`,
+      logs: `${error?.name ?? 'Error'}: ${error?.message ?? String(error)}\n${error?.stack ?? ''}`,
+      service: 'fashion-aura-api',
+    });
+
     return NextResponse.json(
       { message: 'An error occurred during checkout.' },
       { status: 500 }
