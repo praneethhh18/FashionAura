@@ -84,18 +84,30 @@ export async function GET(req: NextRequest) {
   const mode = (url.searchParams.get("mode") || "db").toLowerCase();
   const scenario = SCENARIOS[mode] ?? SCENARIOS.db;
 
-  // Push each line into the local ring buffer (so the ship-to-IIQ payload
-  // carries the same context the reporter would have collected from a real
-  // chain of logs).
-  for (const line of scenario.lines) {
-    // Tag the line in the ring with INFO so it's preserved as-is.
+  // Spread the synthetic events over a realistic cascade window
+  // (~60 seconds, ending now). Without this every line shares the
+  // same ingestion timestamp in Datadog and the IncidentIQ timeline
+  // collapses to one instant - MTTD shows 0m and judges can't see
+  // the failure unfolding. Prepending an explicit ISO timestamp to
+  // each line lets Datadog's auto-parser AND IncidentIQ's
+  // correlate_timeline tool pick up the per-event time.
+  const now = Date.now();
+  const totalSpreadMs = 60_000;
+  const lineCount = scenario.lines.length;
+  const stepMs = lineCount > 1 ? totalSpreadMs / (lineCount - 1) : 0;
+
+  const stampedLines = scenario.lines.map((line, i) => {
+    const ts = new Date(now - totalSpreadMs + i * stepMs).toISOString();
+    return `${ts} ${line}`;
+  });
+
+  for (const line of stampedLines) {
     note("ERROR", scenario.service, line);
   }
 
-  // Fire the incident report. Best-effort; doesn't block response.
   void reportIncident({
     title: scenario.title,
-    logs: scenario.lines.join("\n"),
+    logs: stampedLines.join("\n"),
     service: scenario.service,
   });
 
@@ -105,6 +117,11 @@ export async function GET(req: NextRequest) {
       error: scenario.title,
       mode,
       reported_to_incidentiq: true,
+      // Surface the timestamp span so callers can verify it spread
+      // correctly (and so a curl test sees the cascade is real).
+      spread_seconds: lineCount > 1 ? totalSpreadMs / 1000 : 0,
+      first_event: stampedLines[0]?.slice(0, 24),
+      last_event: stampedLines[stampedLines.length - 1]?.slice(0, 24),
     },
     { status: 500 },
   );
